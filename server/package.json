@@ -1,0 +1,25 @@
+{
+    "name": "server",
+    "version": "1.0.0",
+    "description": "My Songs Server",
+    "main": "dist/index.js",
+    "scripts": {
+        "start": "ts-node-dev --respawn --transpile-only src/index.ts"
+    },
+    "author": "Thiago Fukuyama Marcilli",
+    "license": "MIT",
+    "dependencies": {
+        "cors": "^2.8.5",
+        "express": "^5.1.0",
+        "multer": "^2.0.1",
+        "mysql2": "^3.14.1"
+    },
+    "devDependencies": {
+        "@types/cors": "^2.8.19",
+        "@types/express": "^5.0.3",
+        "@types/multer": "^1.4.13",
+        "@types/node": "^24.0.1",
+        "ts-node-dev": "^2.0.0",
+        "typescript": "^5.8.3"
+    }
+}

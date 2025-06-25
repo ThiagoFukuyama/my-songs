@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMe } from "../context/MeContext";
+import { useAudioPlayer } from "../context/AudioPlayerContext";
 
 interface Favorite {
     favorite_id: number;
@@ -16,6 +17,8 @@ interface Favorite {
 
 export default function MyFavorites() {
     const { user } = useMe();
+    const { setSong, play, pause, isPlaying, currentSongId } = useAudioPlayer();
+
     const [favorites, setFavorites] = useState<Favorite[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -57,6 +60,19 @@ export default function MyFavorites() {
         }
     };
 
+    function togglePlay(fav: Favorite) {
+        if (currentSongId === fav.song_id) {
+            if (isPlaying) {
+                pause();
+            } else {
+                play();
+            }
+        } else {
+            setSong(fav.song_id, fav.song_title);
+            play();
+        }
+    }
+
     if (!user) return <div>Você precisa estar logado.</div>;
     if (loading) return <div>Loading favorites...</div>;
     if (error) return <div className="text-red">{error}</div>;
@@ -86,56 +102,66 @@ export default function MyFavorites() {
                             </tr>
                         </thead>
                         <tbody>
-                            {favorites.map((fav) => (
-                                <tr key={fav.favorite_id}>
-                                    <td>
-                                        <strong>{fav.song_title}</strong>
-                                    </td>
-                                    <td>{fav.artist}</td>
-                                    <td>
-                                        {fav.album_title
-                                            ? `${fav.album_title} (${
-                                                  fav.release_year ?? "?"
-                                              })`
-                                            : "-"}
-                                    </td>
-                                    <td>{fav.duration ?? "-"}</td>
-                                    <td>
-                                        {new Date(
-                                            fav.favorited_at
-                                        ).toLocaleDateString()}
-                                    </td>
-                                    <td
-                                        style={{
-                                            display: "flex",
-                                            gap: "0.5rem",
-                                        }}
-                                    >
-                                        <button
-                                            onClick={() =>
-                                                alert(
-                                                    `Playing: ${fav.song_title}`
-                                                )
-                                            }
-                                            aria-label={`Play ${fav.song_title}`}
-                                            title="Play"
+                            {favorites.map((fav) => {
+                                const isCurrentSong =
+                                    currentSongId === fav.song_id;
+                                return (
+                                    <tr key={fav.favorite_id}>
+                                        <td>
+                                            <strong>{fav.song_title}</strong>
+                                        </td>
+                                        <td>{fav.artist}</td>
+                                        <td>
+                                            {fav.album_title
+                                                ? `${fav.album_title} (${
+                                                      fav.release_year ?? "?"
+                                                  })`
+                                                : "-"}
+                                        </td>
+                                        <td>{fav.duration ?? "-"}</td>
+                                        <td>
+                                            {new Date(
+                                                fav.favorited_at
+                                            ).toLocaleDateString()}
+                                        </td>
+                                        <td
+                                            style={{
+                                                display: "flex",
+                                                gap: "0.5rem",
+                                            }}
                                         >
-                                            ▶️
-                                        </button>
-                                        <button
-                                            onClick={() =>
-                                                handleUnfavorite(
-                                                    fav.favorite_id
-                                                )
-                                            }
-                                            aria-label={`Unfavorite ${fav.song_title}`}
-                                            title="Unfavorite"
-                                        >
-                                            ❤️
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
+                                            <button
+                                                onClick={() => togglePlay(fav)}
+                                                aria-label={
+                                                    isCurrentSong && isPlaying
+                                                        ? `Pause ${fav.song_title}`
+                                                        : `Play ${fav.song_title}`
+                                                }
+                                                title={
+                                                    isCurrentSong && isPlaying
+                                                        ? "Pause"
+                                                        : "Play"
+                                                }
+                                            >
+                                                {isCurrentSong && isPlaying
+                                                    ? "⏸"
+                                                    : "▶️"}
+                                            </button>
+                                            <button
+                                                onClick={() =>
+                                                    handleUnfavorite(
+                                                        fav.favorite_id
+                                                    )
+                                                }
+                                                aria-label={`Unfavorite ${fav.song_title}`}
+                                                title="Unfavorite"
+                                            >
+                                                ❤️
+                                            </button>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>

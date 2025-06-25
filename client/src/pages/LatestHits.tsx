@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMe } from "../context/MeContext";
+import { useAudioPlayer } from "../context/AudioPlayerContext";
 
 interface Song {
     id: number;
@@ -15,6 +16,8 @@ interface Song {
 
 export default function LatestHits() {
     const { user } = useMe();
+    const { setSong, play, pause, isPlaying, currentSongId } = useAudioPlayer();
+
     const [songs, setSongs] = useState<Song[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -44,7 +47,7 @@ export default function LatestHits() {
         }
 
         fetchSongs();
-    }, [refetch]); // dispara sempre que refetch mudar
+    }, [refetch]);
 
     const handleFavoriteToggle = async (song: Song) => {
         if (!user) {
@@ -115,6 +118,20 @@ export default function LatestHits() {
         }
     };
 
+    // Função para alternar play/pause do áudio
+    function togglePlay(song: Song) {
+        if (currentSongId === song.id) {
+            if (isPlaying) {
+                pause();
+            } else {
+                play();
+            }
+        } else {
+            setSong(song.id, song.title);
+            play();
+        }
+    }
+
     if (loading) return <div>Loading songs...</div>;
     if (error) return <div className="text-red">{error}</div>;
 
@@ -141,6 +158,7 @@ export default function LatestHits() {
                         border: 0,
                         padding: "1em",
                         fontSize: "1.25rem",
+                        cursor: "pointer",
                     }}
                 >
                     🔄
@@ -160,49 +178,66 @@ export default function LatestHits() {
                         </tr>
                     </thead>
                     <tbody>
-                        {songs.map((song) => (
-                            <tr key={song.id}>
-                                <td>
-                                    <strong>{song.title}</strong>
-                                </td>
-                                <td>{song.artist}</td>
-                                <td>{song.album_title ?? "-"}</td>
-                                <td>{song.duration ?? "-"}</td>
-                                <td>
-                                    {new Date(
-                                        song.created_at
-                                    ).toLocaleDateString()}
-                                </td>
-                                <td style={{ display: "flex", gap: "0.5rem" }}>
-                                    <button
-                                        onClick={() =>
-                                            alert(`Playing: ${song.title}`)
-                                        }
-                                        aria-label={`Play ${song.title}`}
-                                        title="Play"
+                        {songs.map((song) => {
+                            const isCurrentSong = currentSongId === song.id;
+
+                            return (
+                                <tr key={song.id}>
+                                    <td>
+                                        <strong>{song.title}</strong>
+                                    </td>
+                                    <td>{song.artist}</td>
+                                    <td>{song.album_title ?? "-"}</td>
+                                    <td>{song.duration ?? "-"}</td>
+                                    <td>
+                                        {new Date(
+                                            song.created_at
+                                        ).toLocaleDateString()}
+                                    </td>
+                                    <td
+                                        style={{
+                                            display: "flex",
+                                            gap: "0.5rem",
+                                        }}
                                     >
-                                        ▶️
-                                    </button>
-                                    <button
-                                        onClick={() =>
-                                            handleFavoriteToggle(song)
-                                        }
-                                        aria-label={
-                                            song.isFavorited
-                                                ? `Unfavorite ${song.title}`
-                                                : `Favorite ${song.title}`
-                                        }
-                                        title={
-                                            song.isFavorited
-                                                ? "Unfavorite"
-                                                : "Favorite"
-                                        }
-                                    >
-                                        {song.isFavorited ? "❤️" : "🤍"}
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
+                                        <button
+                                            onClick={() => togglePlay(song)}
+                                            title={
+                                                isCurrentSong && isPlaying
+                                                    ? "Pause"
+                                                    : "Play"
+                                            }
+                                            aria-label={
+                                                isCurrentSong && isPlaying
+                                                    ? `Pause ${song.title}`
+                                                    : `Play ${song.title}`
+                                            }
+                                        >
+                                            {isCurrentSong && isPlaying
+                                                ? "⏸"
+                                                : "▶️"}
+                                        </button>
+                                        <button
+                                            onClick={() =>
+                                                handleFavoriteToggle(song)
+                                            }
+                                            aria-label={
+                                                song.isFavorited
+                                                    ? `Unfavorite ${song.title}`
+                                                    : `Favorite ${song.title}`
+                                            }
+                                            title={
+                                                song.isFavorited
+                                                    ? "Unfavorite"
+                                                    : "Favorite"
+                                            }
+                                        >
+                                            {song.isFavorited ? "❤️" : "🤍"}
+                                        </button>
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>

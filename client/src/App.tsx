@@ -16,6 +16,7 @@ import Album from "./pages/Album";
 import Song from "./pages/Song";
 import { useEffect } from "react";
 import { useMe } from "./context/MeContext";
+import { AudioPlayerProvider } from "./context/AudioPlayerContext";
 
 function AppLayout() {
     const { user } = useMe();
@@ -26,12 +27,12 @@ function AppLayout() {
     }, [user]);
 
     return (
-        <>
+        <AudioPlayerProvider>
             <Navbar />
             <main className="container-lg">
                 <Outlet />
             </main>
-        </>
+        </AudioPlayerProvider>
     );
 }
 

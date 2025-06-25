@@ -30,6 +30,7 @@ export default function SongForm() {
         album_id: "",
     });
 
+    const [audioFile, setAudioFile] = useState<File | null>(null); // Novo
     const [albums, setAlbums] = useState<AlbumOption[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -91,6 +92,11 @@ export default function SongForm() {
         }));
     }
 
+    function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0] ?? null;
+        setAudioFile(file);
+    }
+
     async function handleSubmit(e: FormEvent) {
         e.preventDefault();
         setError(null);
@@ -101,6 +107,7 @@ export default function SongForm() {
             formData.append("artist", song.artist);
             formData.append("duration", song.duration);
             formData.append("album_id", song.album_id.toString());
+            if (audioFile) formData.append("file", audioFile);
 
             const method = action === "edit" && id !== "0" ? "PUT" : "POST";
             const url =
@@ -127,7 +134,7 @@ export default function SongForm() {
     if (loading) return <div>Loading song...</div>;
 
     return (
-        <div className="container min-h-full flex jcc aic">
+        <div className="container min-h-full flex jcc aic mb-5">
             <form onSubmit={handleSubmit} className="flex flex-column gap-2">
                 <Link to="/songs" className="mb-2">
                     ←
@@ -193,6 +200,17 @@ export default function SongForm() {
                             ))}
                         </select>
                     </div>
+                </div>
+
+                <div className="column">
+                    <label htmlFor="file">Audio File (mp3, wav...)</label>
+                    <input
+                        id="file"
+                        name="file"
+                        type="file"
+                        accept="audio/*"
+                        onChange={handleFileChange}
+                    />
                 </div>
 
                 {error && (

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import fs from "fs/promises";
+import fsSync from "fs";
 import path from "path";
 import { db } from "../db/index";
 import { upload, renameTempFile } from "../services/upload";
@@ -77,6 +78,42 @@ router.get("/:id", async (req, res): Promise<any> => {
         });
     } catch (err) {
         return res.status(500).json({ error: "Failed to fetch song" });
+    }
+});
+
+router.get("/:id/audio", async (req, res): Promise<void> => {
+    const songId = req.params.id;
+
+    try {
+        const files = await fs.readdir(songsDir);
+
+        const file = files.find((f) => f.startsWith(songId + "."));
+        if (!file) {
+            res.status(404).json({ error: "Arquivo de áudio não encontrado" });
+            return;
+        }
+
+        const filePath = path.join(songsDir, file);
+        const ext = path.extname(file).toLowerCase();
+
+        const contentType =
+            {
+                ".mp3": "audio/mpeg",
+                ".wav": "audio/wav",
+                ".ogg": "audio/ogg",
+            }[ext] || "application/octet-stream";
+
+        res.setHeader("Content-Type", contentType);
+
+        const stream = fsSync.createReadStream(filePath);
+        stream.on("error", (err) => {
+            console.error("Erro ao ler o arquivo de áudio:", err);
+            res.sendStatus(500);
+        });
+        stream.pipe(res);
+    } catch (err) {
+        console.error("Erro ao acessar arquivos:", err);
+        res.status(500).json({ error: "Erro ao acessar arquivos" });
     }
 });
 

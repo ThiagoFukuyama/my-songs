@@ -7,7 +7,9 @@ const router = Router();
 // GET /albums - list all albums
 router.get("/", async (_req: Request, res: Response): Promise<void> => {
     try {
-        const [rows] = await db.query<Album[]>("SELECT * FROM albums");
+        const [rows] = await db.query<Album[]>(
+            "SELECT * FROM albums ORDER BY created_at DESC"
+        );
         res.json(rows);
     } catch (error) {
         res.status(500).json({ error: "Failed to fetch albums" });
@@ -72,13 +74,20 @@ router.put("/:id", async (req: Request, res: Response): Promise<void> => {
     }
 });
 
-// DELETE /albums/:id - delete album
 router.delete("/:id", async (req: Request, res: Response): Promise<void> => {
+    const albumId = req.params.id;
     try {
-        await db.query("DELETE FROM albums WHERE id = ?", [req.params.id]);
+        // Deletar músicas relacionadas ao álbum
+        await db.query("DELETE FROM songs WHERE album_id = ?", [albumId]);
+
+        // Deletar o álbum
+        await db.query("DELETE FROM albums WHERE id = ?", [albumId]);
+
         res.sendStatus(204);
     } catch (error) {
-        res.status(500).json({ error: "Failed to delete album" });
+        res.status(500).json({
+            error: "Failed to delete album and related songs",
+        });
     }
 });
 

@@ -1,35 +1,58 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import {
+    BrowserRouter,
+    Routes,
+    Route,
+    Outlet,
+    useNavigate,
+} from "react-router-dom";
+import Navbar from "./components/Navbar";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import LatestHits from "./pages/LatestHits";
+import MyFavorites from "./pages/MyFavorites";
+import ManageSongs from "./pages/ManageSongs";
+import ManageAlbums from "./pages/ManageAlbums";
+import Album from "./pages/Album";
+import Song from "./pages/Song";
+import { useEffect } from "react";
+import { useMe } from "./context/MeContext";
 
-function App() {
-  const [count, setCount] = useState(0)
+function AppLayout() {
+    const { user } = useMe();
+    const navigate = useNavigate();
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    useEffect(() => {
+        if (user === null) navigate("/");
+    }, [user]);
+
+    return (
+        <>
+            <Navbar />
+            <main className="container-lg">
+                <Outlet />
+            </main>
+        </>
+    );
 }
 
-export default App
+export default function App() {
+    return (
+        <BrowserRouter>
+            <Routes>
+                {/* Sem navbar */}
+                <Route path="/" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+
+                {/* Com navbar */}
+                <Route element={<AppLayout />}>
+                    <Route path="/latest-hits" element={<LatestHits />} />
+                    <Route path="/my-favorites" element={<MyFavorites />} />
+                    <Route path="/songs" element={<ManageSongs />} />
+                    <Route path="/song/:id" element={<Song />} />
+                    <Route path="/albums" element={<ManageAlbums />} />
+                    <Route path="/album/:id" element={<Album />} />
+                </Route>
+            </Routes>
+        </BrowserRouter>
+    );
+}

@@ -32,7 +32,7 @@ router.get("/:id", async (req, res): Promise<void> => {
     }
 });
 
-// POST /users - create a new user
+// POST /users - create a new user (ajustado para checar duplicidade de name e email)
 router.post("/", async (req, res): Promise<void> => {
     const { name, email, password } = req.body;
 
@@ -42,17 +42,36 @@ router.post("/", async (req, res): Promise<void> => {
     }
 
     try {
+        // Checa se já existe name ou email
+        const [existing] = await db.query<User[]>(
+            "SELECT * FROM users WHERE name = ? OR email = ?",
+            [name, email]
+        );
+
+        if (existing.length > 0) {
+            // Descobre qual campo está duplicado
+            const nameExists = existing.some((u) => u.name === name);
+            const emailExists = existing.some((u) => u.email === email);
+
+            if (nameExists && emailExists) {
+                res.status(409).json({
+                    error: "Username and email already exist",
+                });
+            } else if (nameExists) {
+                res.status(409).json({ error: "Username already exists" });
+            } else {
+                res.status(409).json({ error: "Email already exists" });
+            }
+            return;
+        }
+
         const [result] = await db.query(
             "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
             [name, email, password]
         );
         res.status(201).json({ id: (result as any).insertId });
     } catch (err: any) {
-        if (err.code === "ER_DUP_ENTRY") {
-            res.status(409).json({ error: "Email already exists" });
-        } else {
-            res.status(500).json({ error: "Database error" });
-        }
+        res.status(500).json({ error: "Database error" });
     }
 });
 
@@ -77,6 +96,36 @@ router.delete("/:id", async (req, res) => {
         res.sendStatus(204);
     } catch (error) {
         res.status(500).json({ error: "Failed to delete user" });
+    }
+});
+
+// POST /users/login - login simples, verifica email e senha
+router.post("/login", async (req, res) => {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+        res.status(400).json({ error: "Missing username or password" });
+        return;
+    }
+
+    try {
+        const [rows] = await db.query<User[]>(
+            "SELECT * FROM users WHERE name = ? AND password = ?",
+            [username, password]
+        );
+
+        if (rows.length === 0) {
+            res.status(401).json({ error: "Invalid username or password" });
+            return;
+        }
+
+        const user = rows[0];
+        // Retorna dados do usuário sem senha
+        const { password: _, ...userWithoutPassword } = user;
+
+        res.json(userWithoutPassword);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to login" });
     }
 });
 
